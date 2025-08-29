@@ -7,10 +7,7 @@ import utils.Console;
 import java.io.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static classes.MusicBand.compareByDateAndName;
 
@@ -42,7 +39,7 @@ public class Executor {
     /**
      * Хранит ссылку на файл со скриптом.
      */
-    private final File file_script;
+//    private final File file_script;
     /**
      * Хранит объект типа {@link utils.Console} для чтения команд из консоли.
      */
@@ -52,17 +49,20 @@ public class Executor {
      */
     private Console consoleScript;
 
+    private final List<File> scriptFiles;
+
+
     /**
      * Создает объект типа {@link Executor} по указанным параметрам.
      * Присваивает значение переменной initializationDate.
      * Считывает данные из файла file_csv и сохраняет их в переменную musicBands.
      * <p>
      * @param file_csv Ссылка типа {@link java.io.File} на CSV-файл для хранения коллекции.
-     * @param file_script Ссылка типа {@link java.io.File} на файл, содержащий скрипт.
+//     * @param file_script Ссылка типа {@link java.io.File} на файл, содержащий скрипт.
      */
-    public Executor(File file_csv, File file_script){
+    public Executor(File file_csv, List<File> scriptFiles){
         this.file_csv = file_csv;
-        this.file_script = file_script;
+        this.scriptFiles = scriptFiles;
         initializationDate = ZonedDateTime.now();
         musicBands = ReaderCSV.loadFromFile(file_csv);
     }
@@ -72,9 +72,9 @@ public class Executor {
      * <p>
      * @throws FileNotFoundException если файл file_script не найден или недоступен для чтения
      */
-    public void setConsoleScript() throws FileNotFoundException{
-        consoleScript = new Console(new FileInputStream(file_script));
-    }
+//    public void setConsoleScript() throws FileNotFoundException{
+//        consoleScript = new Console(new FileInputStream(file_script));
+//    }
 
     /**
      * Выводит на консоль список доступных команд.
@@ -320,15 +320,24 @@ public class Executor {
     /**
      * Выполняет команды из файла со скриптом.
      */
-    public void execute_script(){
-        try(FileInputStream fileInputStream = new FileInputStream(file_script)){
+    public void execute_script(File scriptFile){
+        if (!scriptFile.exists()) {
+            System.err.println("Error: script file '" + scriptFile.getName() + "' does not exist");
+            return;
+        }
+        if (!scriptFile.canRead()) {
+            System.err.println("Error: script file '" + scriptFile.getName() + "' is not readable");
+            return;
+        }
+
+        try(FileInputStream fileInputStream = new FileInputStream(scriptFile)){
             Console consoleScript = new Console(fileInputStream);
 
             String s;
             while (true){
                 s = consoleScript.readLine();
                 if(s == null){
-                    System.out.printf("Execution of the script from the '%s' file is complete\n", file_script);
+                    System.out.printf("Execution of the script from the '%s' file is complete\n", scriptFile.getName());
                     break;
                 }
                 if(s.isEmpty()){
@@ -338,6 +347,12 @@ public class Executor {
                 Console.CommandInput input = Console.parseCommand(s);
                 if(!Console.isValidCommand(input.command)){
                     System.out.printf("There is no command '%s'\n", input.command);
+                    continue;
+                }
+
+                // Проверка на рекурсивный вызов execute_script
+                if(input.command.equals("execute_script")){
+                    System.out.println("Error: recursive script execution is not allowed");
                     continue;
                 }
 
@@ -351,6 +366,7 @@ public class Executor {
                     musicBands.headMap(Long.MAX_VALUE).values().removeIf(musicBand -> compareByDateAndName.compare(musicBand, band) > 0);
                     Long sizeAfter = Long.valueOf(musicBands.size());
                     System.out.printf("%d bands were successfully removed\n", sizeBefore-sizeAfter);
+                    continue;
                 }
 
                 Command command = commands.get(input.command);
@@ -425,9 +441,19 @@ public class Executor {
                 }
             }
         }catch(FileNotFoundException e){
-            System.err.println("File for script was not found");
+            System.err.println("File for script was not found: " + scriptFile.getName());
         }catch(IOException e){
-            System.err.println("IO error:" + e.getMessage());
+            System.err.println("IO error while reading script '" + scriptFile.getName() + "': " + e.getMessage());
+        }
+    }
+
+    /**
+     * Выполняет все скрипты, переданные через аргументы командной строки.
+     */
+    public void executeAllScripts() {
+        for (File scriptFile : scriptFiles) {
+            System.out.println("Executing script: " + scriptFile.getName());
+            execute_script(scriptFile);
         }
     }
 }

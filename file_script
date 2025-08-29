@@ -1,3 +1,4 @@
+execute_script file_script2
 insert 11
 Имя
 12
@@ -18,3 +19,4 @@ ROCK
 Студия2
 insert 13
 Имя3
+execute_script file_script
