@@ -1,6 +1,7 @@
 package commands;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Команда выполняет скрипт из указанного файла.
@@ -9,7 +10,7 @@ import java.io.File;
  * @see CommandWithArgument
  * @see Executor
  */
-public class Execute_script implements CommandWithArgument {
+public class Execute_script implements CommandWithArgument<File> {
     /**
      * Хранит имя команды (в данном случае "execute_script").
      */
@@ -34,7 +35,7 @@ public class Execute_script implements CommandWithArgument {
     /**
      * {@inheritDoc}
      * Реализация метода {@link Command#execute()}.
-     * Вызывает метод {@link Executor#execute_script(File)} у объекта executor.
+     * Проверяет рекурсию и вызывает метод {@link Executor#execute_script(File)} у объекта executor.
      */
     @Override
     public void execute(){
@@ -42,6 +43,19 @@ public class Execute_script implements CommandWithArgument {
             System.err.println("Error: no script file specified");
             return;
         }
+
+        // Проверяем рекурсию здесь, а не в setArgument
+        try {
+            File canonicalFile = scriptFile.getCanonicalFile();
+            if (executor.isScriptExecuting(canonicalFile)) {
+                System.out.println("Warning: recursive call to '" + scriptFile.getName() + "' ignored");
+                return; // Просто игнорируем, не вызываем executor.execute_script()
+            }
+        } catch (IOException e) {
+            System.err.println("Error checking script file: " + e.getMessage());
+            return;
+        }
+
         executor.execute_script(scriptFile);
     }
 
@@ -74,7 +88,7 @@ public class Execute_script implements CommandWithArgument {
      * @return текущий аргумент команды (файл скрипта)
      */
     @Override
-    public Object getArgument() {
+    public File getArgument() {
         return scriptFile;
     }
 

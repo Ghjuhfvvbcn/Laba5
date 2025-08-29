@@ -70,14 +70,7 @@ public class Executor {
         musicBands = ReaderCSV.loadFromFile(file_csv);
     }
 
-    /**
-     * Присваивает значение переменной consoleScript.
-     * <p>
-     * @throws FileNotFoundException если файл file_script не найден или недоступен для чтения
-     */
-//    public void setConsoleScript() throws FileNotFoundException{
-//        consoleScript = new Console(new FileInputStream(file_script));
-//    }
+
 
     /**
      * Выводит на консоль список доступных команд.
@@ -471,6 +464,14 @@ public class Executor {
         for (File scriptFile : scriptFiles) {
             System.out.println("Executing script: " + scriptFile.getName());
             execute_script(scriptFile);
+        }
+    }
+
+    public boolean isScriptExecuting(File scriptFile) {
+        try {
+            return executingScripts.contains(scriptFile.getCanonicalFile());
+        } catch (IOException e) {
+            return executingScripts.contains(scriptFile);
         }
     }
 }
