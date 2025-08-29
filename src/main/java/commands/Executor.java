@@ -333,7 +333,6 @@ public class Executor {
             return;
         }
 
-        // Проверка на рекурсивный вызов
         try {
             File canonicalFile = scriptFile.getCanonicalFile();
             if (executingScripts.contains(canonicalFile)) {
@@ -450,6 +449,7 @@ public class Executor {
                     command.execute();
                 }
             }
+            System.out.printf("Execution of the script from the '%s' file is complete\n", scriptFile.getName());
         }catch(FileNotFoundException e){
             System.err.println("File for script was not found: " + scriptFile.getName());
         }catch(IOException e){
