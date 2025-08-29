@@ -51,6 +51,9 @@ public class Executor {
 
     private final List<File> scriptFiles;
 
+    private final Set<File> executingScripts = new HashSet<>();
+
+
 
     /**
      * Создает объект типа {@link Executor} по указанным параметрам.
@@ -330,6 +333,19 @@ public class Executor {
             return;
         }
 
+        // Проверка на рекурсивный вызов
+        try {
+            File canonicalFile = scriptFile.getCanonicalFile();
+            if (executingScripts.contains(canonicalFile)) {
+                System.err.println("Error: recursive script execution detected for file: " + scriptFile.getName());
+                return;
+            }
+            executingScripts.add(canonicalFile);
+        } catch (IOException e) {
+            System.err.println("Error checking script file: " + e.getMessage());
+            return;
+        }
+
         try(FileInputStream fileInputStream = new FileInputStream(scriptFile)){
             Console consoleScript = new Console(fileInputStream);
 
@@ -347,12 +363,6 @@ public class Executor {
                 Console.CommandInput input = Console.parseCommand(s);
                 if(!Console.isValidCommand(input.command)){
                     System.out.printf("There is no command '%s'\n", input.command);
-                    continue;
-                }
-
-                // Проверка на рекурсивный вызов execute_script
-                if(input.command.equals("execute_script")){
-                    System.out.println("Error: recursive script execution is not allowed");
                     continue;
                 }
 
@@ -444,6 +454,13 @@ public class Executor {
             System.err.println("File for script was not found: " + scriptFile.getName());
         }catch(IOException e){
             System.err.println("IO error while reading script '" + scriptFile.getName() + "': " + e.getMessage());
+        } finally {
+            // Удаляем скрипт из списка выполняемых
+            try {
+                executingScripts.remove(scriptFile.getCanonicalFile());
+            } catch (IOException e) {
+                executingScripts.remove(scriptFile);
+            }
         }
     }
 
