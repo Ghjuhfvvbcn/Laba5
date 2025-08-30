@@ -32,7 +32,6 @@ public class Program {
         fileIsReadableAndWriteable(args[0]);
         File file_csv = new File(args[0]);
 
-        // Создаем список файлов скриптов
         List<File> scriptFiles = new ArrayList<>();
         for (int i = 1; i < args.length; i++) {
             fileIsReadable(args[i]);

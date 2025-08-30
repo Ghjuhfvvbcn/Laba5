@@ -1,0 +1,215 @@
+@startuml
+!theme plain
+
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+title Диаграмма классов: Музыкальные коллекции
+
+package "classes" {
+    class MusicBand {
+        - id: Long
+        - name: String
+        - coordinates: Coordinates
+        - creationDate: ZonedDateTime
+        - numberOfParticipants: int
+        - description: String
+        - genre: MusicGenre
+        - studio: Studio
+        + getId(): Long
+        + getName(): String
+        + getCoordinates(): Coordinates
+        + getCreationDate(): ZonedDateTime
+        + getNumberOfParticipants(): int
+        + getDescription(): String
+        + getGenre(): MusicGenre
+        + getStudio(): Studio
+        + compareTo(MusicBand): int
+        + toString(): String
+    }
+
+    class Coordinates {
+        - x: Double
+        - y: Float
+        + getX(): Double
+        + getY(): Float
+    }
+
+    class Studio {
+        - address: String
+        + getAddress(): String
+    }
+
+    enum MusicGenre {
+        ROCK
+        PSYCHEDELIC_CLOUD_RAP
+        JAZZ
+        SOUL
+        POST_ROCK
+    }
+
+    class GeneratorId {
+        - currentId: Long
+        + generateId(): Long
+        + setId(Long): void
+    }
+}
+
+package "commands" {
+    interface Command {
+        + execute(): void
+        + getCommandName(): String
+    }
+
+    interface CommandWithArgument {
+        + setArgument(String): void
+        + getArgument(): Object
+    }
+
+    class Clear implements Command {
+        - executor: Executor
+        + execute(): void
+        + getCommandName(): String
+    }
+
+    class Insert implements Command, CommandWithArgument {
+        - executor: Executor
+        - argument: Long
+        + execute(): void
+        + setArgument(String): void
+        + getArgument(): Object
+        + getCommandName(): String
+    }
+
+    class Filter_starts_with_name implements Command, CommandWithArgument {
+        - executor: Executor
+        - argument: String
+        + execute(): void
+        + setArgument(String): void
+        + getArgument(): Object
+        + getCommandName(): String
+    }
+
+    class Exit implements Command
+    class Help implements Command
+    class Info implements Command
+    class Show implements Command
+    class Execute_script implements Command, CommandWithArgument
+    class Remove_key implements Command, CommandWithArgument
+    class Remove_lower implements Command
+    class Remove_lower_key implements Command, CommandWithArgument
+    class Replace_if_lower implements Command, CommandWithArgument
+    class Save implements Command
+    class Update implements Command, CommandWithArgument
+    class Print_ascending implements Command
+    class Print_descending implements Command
+}
+
+package "utils" {
+    class Console {
+        - scanner: Scanner
+        + readLine(): String
+        + readCommand(): CommandInput
+        + readMusicBand(): MusicBand
+        + readMusicBandFromScript(): MusicBand
+        + print(String): void
+    }
+
+    class CommandMap {
+        + createMapWithCommands(Executor): Map
+    }
+
+    class ReaderCSV {
+        + loadFromFile(File): TreeMap
+    }
+
+    class WriterCSV {
+        + loadToFile(File, TreeMap): void
+    }
+}
+
+class Program {
+    + main(String[]): void
+}
+
+class Executor {
+    - musicBands: TreeMap
+    - commands: Map
+    - initializationDate: ZonedDateTime
+    - file_csv: File
+    - console: Console
+    - scriptFiles: List
+    - executingScripts: Set
+
+    + help(): void
+    + info(): void
+    + show(): void
+    + clear(): void
+    + save(): void
+    + exit(): void
+    + print_ascending(): void
+    + print_descending(): void
+    + remove_key(Long): void
+    + remove_lower_key(Long): void
+    + filter_starts_with_name(String): void
+    + insert(Long): void
+    + update(Long): void
+    + remove_lower(): void
+    + replace_if_lower(Long): void
+    + execute_script(File): void
+    + executeAllScripts(): void
+    + isScriptExecuting(File): boolean
+}
+
+' Связи между классами
+MusicBand "1" *-- "1" Coordinates
+MusicBand "1" *-- "1" Studio
+MusicBand "1" *-- "1" MusicGenre
+
+Program --> Executor : создает
+Program --> Console : использует
+
+Executor "1" *-- "1" Console
+Executor "1" *-- "*" MusicBand
+Executor "1" *-- "*" Command : содержит
+
+Clear --> Executor
+Insert --> Executor
+Filter_starts_with_name --> Executor
+
+ReaderCSV ..> MusicBand : создает
+WriterCSV ..> MusicBand : сохраняет
+
+' Наследование интерфейсов
+Command <|-- Clear
+Command <|-- Exit
+Command <|-- Help
+Command <|-- Info
+Command <|-- Show
+Command <|-- Save
+Command <|-- Remove_lower
+Command <|-- Print_ascending
+Command <|-- Print_descending
+
+Command <|-- CommandWithArgument
+CommandWithArgument <|-- Insert
+CommandWithArgument <|-- Filter_starts_with_name
+CommandWithArgument <|-- Execute_script
+CommandWithArgument <|-- Remove_key
+CommandWithArgument <|-- Remove_lower_key
+CommandWithArgument <|-- Replace_if_lower
+CommandWithArgument <|-- Update
+
+note right of Command
+    Интерфейс для команд
+    без аргументов
+end note
+
+note right of CommandWithArgument
+    Интерфейс для команд
+    с аргументами
+end note
+@enduml
